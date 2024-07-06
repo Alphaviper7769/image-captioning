@@ -1,1 +1,34 @@
 node_modules
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environment
+venv/
+.env/
+
+# Distribution / packaging
+build/
+dist/
+*.egg-info/
+
+# Flask settings
+instance/
+*.pyc
+
+# MongoDB settings (if using a local DB)
+*.log
+
+# VS Code settings
+.vscode/
+
+# MacOS
+.DS_Store
+
+# dotenv environment variables file
+.env
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
