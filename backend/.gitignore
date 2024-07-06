@@ -1,3 +1,4 @@
+ 
 node_modules
 
 # Byte-compiled / optimized / DLL files
@@ -32,3 +33,6 @@ instance/
 
 # Jupyter Notebook checkpoints
 .ipynb_checkpoints/
+=======
+node_modules
+
