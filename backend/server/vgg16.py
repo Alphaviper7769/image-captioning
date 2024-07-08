@@ -1,4 +1,5 @@
 import os
+import asyncio
 from flask import Flask, request, jsonify, send_file
 from flask_pymongo import PyMongo
 from gridfs import GridFS
@@ -6,6 +7,7 @@ from tensorflow.keras.applications.vgg16 import VGG16, preprocess_input
 from tensorflow.keras.models import Model
 from tensorflow.keras.preprocessing.image import load_img, img_to_array
 import tensorflow as tf
+from tensorflow.keras.preprocessing.sequence import pad_sequences
 from tensorflow.keras.layers import Input, Dropout, Dense, Embedding, LSTM, add
 from tensorflow.keras.utils import plot_model
 from bson import ObjectId
@@ -26,6 +28,7 @@ latest_epoch=20
 
 # directory=os.path.join("static/uploads",'file.jpg')
 # Load VGG16 model on startup
+
 def load_vgg16_model():
     global model_VGG16
     model_VGG16 = VGG16()
@@ -78,16 +81,16 @@ def load_model():
  model = Model(inputs=[inputs1, inputs2], outputs=outputs)
  model.compile(loss='categorical_crossentropy', optimizer='adam')
 
- # Plot the model
+ # Plot the modelpy
 #  plot_model(model, show_shapes=True)
 
  # Print the model summary
  model.summary()
- weights_path= os.path.join(WORKING_DIR, 'model_epoch_20.weights.h5')
- model.load_weights(weights_path)
+ 
+ model.load_weights('model_epoch_20.weights.h5')
+#  print(weights_path)
 
-
-load_model()
+#  load_model()
 
 
 def idx_to_word(integer, tokenizer):
@@ -222,5 +225,6 @@ def predict_caption_route(image_id):
 
 if __name__ == "__main__":
     load_vgg16_model()  # Load VGG16 model
-   
+    load_model()
+    
     app.run(debug=True)
