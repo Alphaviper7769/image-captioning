@@ -1,17 +1,16 @@
-from flask import Flask, request, redirect, url_for, jsonify, send_file
+from flask import Flask, request, jsonify, send_from_directory
 from flask_pymongo import PyMongo
 from bson import ObjectId
-from gridfs import GridFS
-from io import BytesIO
+import os
 
 app = Flask(__name__)
+app.config["UPLOAD_FOLDER"] = "static/uploads"
 app.config["MONGO_URI"] = "mongodb://localhost:27017/image_database"
-mongo = PyMongo(app)
-fs = GridFS(mongo.db)
 
-@app.route("/")
-def index():
-    return "Upload endpoint at /upload and retrieve endpoint at /images"
+mongo = PyMongo(app)
+
+# Ensure the upload folder exists
+os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
 
 @app.route("/upload", methods=["POST"])
 def upload_file():
@@ -22,14 +21,16 @@ def upload_file():
     caption = request.form["caption"]
     
     if file:
-        file_id = fs.put(file, filename=file.filename)
+        filename = file.filename
+        filepath = os.path.join(app.config["UPLOAD_FOLDER"], filename)
+        file.save(filepath)
         # Save file metadata and caption to MongoDB
-        mongo.db.images.insert_one({
-            "_id": file_id,
-            "filename": file.filename,
-            "caption": caption
-        })
-        return jsonify({'message': 'File uploaded successfully'}), 200
+        file_id = mongo.db.images.insert_one({
+            "filename": filename,
+            "caption": caption,
+            "path": filepath
+        }).inserted_id
+        return jsonify({'message': 'File uploaded successfully', 'file_id': str(file_id)}), 200
     return jsonify({'message': 'File upload failed'}), 400
 
 @app.route("/images", methods=["GET"])
@@ -40,19 +41,18 @@ def get_images():
         image_data = {
             "id": str(img["_id"]),
             "filename": img["filename"],
-            "caption": img["caption"]
+            "caption": img["caption"],
+            "path": img.get("path", "")  # Handle missing 'path' field gracefully
         }
         image_list.append(image_data)
     return jsonify(image_list), 200
 
-@app.route("/image/<image_id>", methods=["GET"])
-def get_image(image_id):
+@app.route("/image/<filename>", methods=["GET"])
+def get_image(filename):
     try:
-        file_id = ObjectId(image_id)
-        image = fs.get(file_id)
-        return send_file(BytesIO(image.read()), mimetype='image/jpeg', as_attachment=True, attachment_filename=image.filename)
+        return send_from_directory(app.config["UPLOAD_FOLDER"], filename)
     except Exception as e:
-        return str(e), 400
+        return jsonify({'message': str(e)}), 400
 
 if __name__ == "__main__":
     app.run(debug=True)
