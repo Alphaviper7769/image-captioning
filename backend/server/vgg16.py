@@ -13,17 +13,18 @@ from tensorflow.keras.utils import plot_model
 from bson import ObjectId
 from io import BytesIO
 import numpy as np
+from deep_translator import GoogleTranslator
 import pickle
 
+from flask_cors import CORS
+
 app = Flask(__name__)
+CORS(app, origins=['http://127.0.0.1:5173'])
 app.config["UPLOAD_FOLDER"] = "static/uploads"
 app.config["MONGO_URI"] = "mongodb://localhost:27017/image_database"
 mongo = PyMongo(app)
 fs = GridFS(mongo.db)
 
-max_length=74
-WORKING_DIR='backend\server'
-latest_epoch=20
 
 
 # directory=os.path.join("static/uploads",'file.jpg')
@@ -143,11 +144,11 @@ os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
 
 @app.route("/upload", methods=["POST"])
 def upload_file():
-    if "image" not in request.files or "caption" not in request.form:
+    if "image" not in request.files:
         return jsonify({'message': 'No image or caption part in the request'}), 400
     
     file = request.files["image"]
-    caption = request.form["caption"]
+    # caption = request.form["caption"]
     
     if file:
         filename = file.filename
@@ -156,7 +157,7 @@ def upload_file():
         # Save file metadata and caption to MongoDB
         file_id = mongo.db.images.insert_one({
             "filename": filename,
-            "caption": caption,
+            # "caption": caption,
             "path": filepath
         }).inserted_id
         return jsonify({'message': 'File uploaded successfully', 'file_id': str(file_id)}), 200
@@ -181,7 +182,7 @@ def generate_features(image_id):
         })
         return jsonify({'message': 'Features generated and stored successfully'}), 200
     except Exception as e:
-        return str(e), 400
+        return jsonify({'message': 'Features not generated and stored successfully'}), 400
 
 @app.route("/images", methods=["GET"])
 def get_images():
@@ -221,8 +222,16 @@ def predict_caption_route(image_id):
         
         return jsonify({'caption': caption}), 200
     except Exception as e:
-        return str(e), 400
-
+        return jsonify({'caption': "error occured"}), 400
+    
+@app.route("/translate/<caption>",methods=["GET"])
+def caption_translate(caption,lang='hi'):
+    try:
+        t=GoogleTranslator(source='auto', target=lang).translate(caption) 
+        return jsonify({'caption': t}), 200
+    except Exception as e:
+        return jsonify({'caption': "error occured"}), 400
+    
 if __name__ == "__main__":
     load_vgg16_model()  # Load VGG16 model
     load_model()
