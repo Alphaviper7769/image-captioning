@@ -1,20 +1,41 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 const Login = () => {
-    const navigate = useNavigate()
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const navigate = useNavigate();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async(e) => {
     e.preventDefault();
     // Handle login logic here
-    console.log('Email:', email, 'Password:', password);
+    const data = { email, password };
+
+    const options = {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(data),
+    };
+
+    const res = await fetch("http://127.0.0.1:5000/login", options)
+      .then((response) => response.json())
+      .then((data) => {
+        if(data.success==true){
+          console.log(data);
+          navigate('/')
+        }
+        else{
+          navigate('/login')
+        }
+      })
+      .catch((error) => console.log(error));
   };
 
-  const RegisterPage = ()=>{
+  const RegisterPage = () => {
     navigate("/register");
-  }
+  };
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-100">
@@ -24,15 +45,17 @@ const Login = () => {
             Login in to your account
           </h2>
         </div>
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit} className="mt-8 space-y-6">
           <div className="rounded-md shadow-sm flex flex-col gap-3 -space-y-px">
             <div>
-              <label htmlFor="email" className="sr-only">Email address</label>
+              <label htmlFor="email" className="sr-only">
+                Email address
+              </label>
               <input
                 id="email"
                 name="email"
                 type="email"
-                autoComplete="email"    
+                autoComplete="email"
                 required
                 className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
                 placeholder="Email address"
@@ -41,7 +64,9 @@ const Login = () => {
               />
             </div>
             <div>
-              <label htmlFor="password" className="sr-only">Password</label>
+              <label htmlFor="password" className="sr-only">
+                Password
+              </label>
               <input
                 id="password"
                 name="password"
@@ -58,7 +83,10 @@ const Login = () => {
 
           <div className="flex items-center justify-center">
             <div className="text-sm">
-              <h3 onClick={RegisterPage} className="font-medium cursor-pointer text-indigo-600 hover:text-indigo-500">
+              <h3
+                onClick={RegisterPage}
+                className="font-medium cursor-pointer text-indigo-600 hover:text-indigo-500"
+              >
                 Don't have an Account?
               </h3>
             </div>
@@ -79,4 +107,3 @@ const Login = () => {
 };
 
 export default Login;
-

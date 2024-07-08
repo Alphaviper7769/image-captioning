@@ -17,7 +17,7 @@ app.config['MONGO_URI'] = os.getenv('MONGO_URI')
 mongo = PyMongo(app)
 bcrypt = Bcrypt(app)
 login_manager = LoginManager(app)
-CORS(app)
+CORS(app, origins=['http://127.0.0.1:5173'])
 
 class User(UserMixin):
     def __init__(self, user_id, username, email, password):
@@ -44,6 +44,11 @@ class User(UserMixin):
 def load_user(user_id):
     return User.get(user_id)
 
+
+@app.route('/',methods=['GET'])
+def first():
+    return jsonify({'message': 'Welcome to the Image Captioning API'})
+
 @app.route('/register', methods=['POST'])
 def register():
     data = request.get_json()
@@ -58,7 +63,7 @@ def register():
         "password": hashed_password
     }
     mongo.db.users.insert_one(user)
-    return jsonify({'message': 'User registered successfully'})
+    return jsonify({'message': 'User registered successfully','success': True})
 
 @app.route('/login', methods=['POST'])
 def login():
@@ -68,9 +73,9 @@ def login():
     user = User.get_by_email(email)
     if user and bcrypt.check_password_hash(user.password, password):
         login_user(user)
-        return jsonify({'message': 'Login successful'})
+        return jsonify({'message': 'Login successful','success': True})
     else:
-        return jsonify({'message': 'Login Unsuccessful. Please check email and password'}), 401
+        return jsonify({'message': 'Login Unsuccessful. Please check email and password','success':False}), 401
 
 @app.route('/logout', methods=['POST'])
 @login_required
