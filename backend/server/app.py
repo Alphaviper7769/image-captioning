@@ -1,3 +1,4 @@
+
 import os
 from flask import Flask, request, jsonify
 from flask_pymongo import PyMongo
@@ -5,7 +6,7 @@ from flask_bcrypt import Bcrypt
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from flask_cors import CORS
 from dotenv import load_dotenv
-from bson.objectid import ObjectId
+from bson import ObjectId
 
 # Load environment variables from .env file
 load_dotenv()
