@@ -21,7 +21,7 @@ from flask_cors import CORS
 app = Flask(__name__)
 CORS(app, origins=['http://127.0.0.1:5173'])
 app.config["UPLOAD_FOLDER"] = "static/uploads"
-app.config["MONGO_URI"] = "mongodb://localhost:27017/image_database"
+app.config["MONGO_URI"] = "mongodb+srv://btech1007921:CYvFWqskFqNUrjUD@image-captioning.evfy3by.mongodb.net/?retryWrites=true&w=majority&appName=image-captioning"
 mongo = PyMongo(app)
 fs = GridFS(mongo.db)
 
