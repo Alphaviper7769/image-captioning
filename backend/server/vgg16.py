@@ -15,15 +15,18 @@ from io import BytesIO
 import numpy as np
 from deep_translator import GoogleTranslator
 import pickle
+from pymongo import MongoClient
 
 from flask_cors import CORS
 
 app = Flask(__name__)
-CORS(app, origins=['http://127.0.0.1:5173'])
+CORS(app, origins=['https://image-captioning-frontend-lac.vercel.app/'])
 app.config["UPLOAD_FOLDER"] = "static/uploads"
-app.config["MONGO_URI"] = "mongodb+srv://btech1007921:CYvFWqskFqNUrjUD@image-captioning.evfy3by.mongodb.net/?retryWrites=true&w=majority&appName=image-captioning"
-mongo = PyMongo(app)
-fs = GridFS(mongo.db)
+uri = "mongodb+srv://btech1007921:KM0yPLHftbP3P6pA@image-captioning-backen.rzgqzkw.mongodb.net/?retryWrites=true&w=majority&appName=image-captioning-backend"
+
+client = MongoClient(uri)
+db = client.get_database('image-captioning-backend')
+fs = GridFS(db)
 
 
 
@@ -155,7 +158,7 @@ def upload_file():
         filepath = os.path.join(app.config["UPLOAD_FOLDER"], filename)
         file.save(filepath)
         # Save file metadata and caption to MongoDB
-        file_id = mongo.db.images.insert_one({
+        file_id = db.images.insert_one({
             "filename": filename,
             # "caption": caption,
             "path": filepath
@@ -176,7 +179,7 @@ def generate_features(image_id):
         features = extract_vgg16_features(temp_path)
         os.remove(temp_path)
         
-        mongo.db.image_features.insert_one({
+        db.image_features.insert_one({
             "image_id": file_id,
             "features": features.tolist()
         })
@@ -186,7 +189,7 @@ def generate_features(image_id):
 
 @app.route("/images", methods=["GET"])
 def get_images():
-    images = mongo.db.images.find()
+    images = db.images.find()
     image_list = []
     for img in images:
         image_data = {
@@ -211,7 +214,7 @@ def get_image(image_id):
 def predict_caption_route(image_id):
     try:
         file_id = ObjectId(image_id)
-        image_doc = mongo.db.images.find_one({"_id": file_id})
+        image_doc = db.images.find_one({"_id": file_id})
         if image_doc is None:
             return jsonify({'message': 'Image not found'}), 404
 
