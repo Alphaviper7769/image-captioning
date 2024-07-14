@@ -20,7 +20,7 @@ from pymongo import MongoClient
 from flask_cors import CORS
 
 app = Flask(__name__)
-CORS(app, origins=['https://image-captioning-frontend-lac.vercel.app/'])
+CORS(app)
 app.config["UPLOAD_FOLDER"] = "static/uploads"
 uri = "mongodb+srv://btech1007921:KM0yPLHftbP3P6pA@image-captioning-backen.rzgqzkw.mongodb.net/?retryWrites=true&w=majority&appName=image-captioning-backend"
 
