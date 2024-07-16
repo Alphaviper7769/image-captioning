@@ -13,17 +13,21 @@ from tensorflow.keras.utils import plot_model
 from bson import ObjectId
 from io import BytesIO
 import numpy as np
+from deep_translator import GoogleTranslator
 import pickle
+from pymongo import MongoClient
+
+from flask_cors import CORS
 
 app = Flask(__name__)
+CORS(app)
 app.config["UPLOAD_FOLDER"] = "static/uploads"
-app.config["MONGO_URI"] = "mongodb://localhost:27017/image_database"
-mongo = PyMongo(app)
-fs = GridFS(mongo.db)
+uri = "mongodb+srv://btech1007921:KM0yPLHftbP3P6pA@image-captioning-backen.rzgqzkw.mongodb.net/?retryWrites=true&w=majority&appName=image-captioning-backend"
 
-max_length=74
-WORKING_DIR='backend\server'
-latest_epoch=20
+client = MongoClient(uri)
+db = client.get_database('image-captioning-backend')
+fs = GridFS(db)
+
 
 
 # directory=os.path.join("static/uploads",'file.jpg')
@@ -143,20 +147,20 @@ os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
 
 @app.route("/upload", methods=["POST"])
 def upload_file():
-    if "image" not in request.files or "caption" not in request.form:
+    if "image" not in request.files:
         return jsonify({'message': 'No image or caption part in the request'}), 400
     
     file = request.files["image"]
-    caption = request.form["caption"]
+    # caption = request.form["caption"]
     
     if file:
         filename = file.filename
         filepath = os.path.join(app.config["UPLOAD_FOLDER"], filename)
         file.save(filepath)
         # Save file metadata and caption to MongoDB
-        file_id = mongo.db.images.insert_one({
+        file_id = db.images.insert_one({
             "filename": filename,
-            "caption": caption,
+            # "caption": caption,
             "path": filepath
         }).inserted_id
         return jsonify({'message': 'File uploaded successfully', 'file_id': str(file_id)}), 200
@@ -175,17 +179,17 @@ def generate_features(image_id):
         features = extract_vgg16_features(temp_path)
         os.remove(temp_path)
         
-        mongo.db.image_features.insert_one({
+        db.image_features.insert_one({
             "image_id": file_id,
             "features": features.tolist()
         })
         return jsonify({'message': 'Features generated and stored successfully'}), 200
     except Exception as e:
-        return str(e), 400
+        return jsonify({'message': 'Features not generated and stored successfully'}), 400
 
 @app.route("/images", methods=["GET"])
 def get_images():
-    images = mongo.db.images.find()
+    images = db.images.find()
     image_list = []
     for img in images:
         image_data = {
@@ -210,7 +214,7 @@ def get_image(image_id):
 def predict_caption_route(image_id):
     try:
         file_id = ObjectId(image_id)
-        image_doc = mongo.db.images.find_one({"_id": file_id})
+        image_doc = db.images.find_one({"_id": file_id})
         if image_doc is None:
             return jsonify({'message': 'Image not found'}), 404
 
@@ -221,8 +225,16 @@ def predict_caption_route(image_id):
         
         return jsonify({'caption': caption}), 200
     except Exception as e:
-        return str(e), 400
-
+        return jsonify({'caption': "error occured"}), 400
+    
+@app.route("/translate/<caption>",methods=["GET"])
+def caption_translate(caption,lang='hi'):
+    try:
+        t=GoogleTranslator(source='auto', target=lang).translate(caption) 
+        return jsonify({'caption': t}), 200
+    except Exception as e:
+        return jsonify({'caption': "error occured"}), 400
+    
 if __name__ == "__main__":
     load_vgg16_model()  # Load VGG16 model
     load_model()

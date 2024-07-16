@@ -8,10 +8,39 @@ const Register = () => {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
+  const handleSubmit = async(e) => {
+    
     // Handle registration logic here
-    console.log('Name:', name, 'Email:', email, 'Password:', password, 'Confirm Password:', confirmPassword);
+    
+    if (confirmPassword !==password){
+      navigate('/register')
+    }
+    else{
+      e.preventDefault();
+    const data = { username:name,email, password };
+
+
+    const options = {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(data),
+    };
+
+    const res = await fetch("http://127.0.0.1:5000/register", options)
+      .then((response) => response.json())
+      .then((data) => {
+        if(data.success){
+          console.log(data);
+          navigate('/')
+        }
+        else{
+          navigate('/register')
+        }
+      })
+      .catch((error) => console.log(error));
+    }
   };
 
   const LoginPage = ()=>{
